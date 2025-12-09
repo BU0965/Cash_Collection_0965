@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Collection and Monitoring Mechanism</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+            color: white;
+            padding: 25px 35px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(26, 115, 232, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(40%, -40%);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+        
+        .subtitle {
+            font-size: 15px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .github-import {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 12px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .github-import:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .github-import i {
+            font-size: 18px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 20px;
+            background-color: white;
+            padding: 20px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f7;
+        }
+        
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .date-filter label {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+        }
+        
+        .date-filter input {
+            padding: 9px 14px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+            color: #2d3748;
+            font-weight: 500;
+            transition: border 0.3s;
+        }
+        
+        .date-filter input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 11px 22px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(243, 156, 18, 0.3);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+            color: white;
+        }
+        
+        .btn-info:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(127, 140, 141, 0.3);
+        }
+        
+        .data-table-container {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            overflow-x: auto;
+            border: 1px solid #eef2f7;
+            position: relative;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 1300px;
+        }
+        
+        .main-header th {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+            color: white;
+            padding: 18px 12px;
+            text-align: center;
+            font-weight: 600;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            font-size: 15px;
+        }
+        
+        .main-header th:last-child {
+            border-right: none;
+        }
+        
+        .sub-header th {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 14px 8px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .sub-header th:last-child {
+            border-right: none;
+        }
+        
+        td {
+            padding: 14px 10px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+            background-color: white;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        
+        tr:not(.highlight-total):hover td {
+            background-color: #f8fafc;
+        }
+        
+        .collection-center {
+            text-align: left;
+            font-weight: 700;
+            color: #1a73e8;
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%) !important;
+            font-size: 15px;
+            padding-left: 20px;
+            border-left: 4px solid #1a73e8;
+        }
+        
+        .mode-row {
+            background-color: white;
+        }
+        
+        .mode-label {
+            text-align: left;
+            padding-left: 35px;
+            font-weight: 600;
+            color: #2d3748;
+            position: relative;
+        }
+        
+        .mode-label::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background-color: #4a90e2;
+            border-radius: 50%;
+        }
+        
+        .highlight-total {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%) !important;
+            color: white;
+            font-weight: 700;
+            border-top: 2px solid #d35400;
+            border-bottom: 2px solid #d35400;
+        }
+        
+        .highlight-total td {
+            background: transparent !important;
+            color: white;
+            border-bottom: none;
+        }
+        
+        .highlight-total .mode-label::before {
+            background-color: white;
+        }
+        
+        .remark-cell {
+            max-width: 200px;
+            overflow-wrap: break-word;
+            color: #4a5568;
+            font-size: 14px;
+            font-style: italic;
+        }
+        
+        .amount-cell {
+            font-weight: 600;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 18px;
+            color: #718096;
+            font-size: 14px;
+            margin-top: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f7;
+        }
+        
+        .footer span {
+            color: #1a73e8;
+            font-weight: 600;
+        }
+        
+        .github-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            animation: modalAppear 0.3s ease;
+            border: 1px solid #eef2f7;
+        }
+        
+        @keyframes modalAppear {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 18px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .modal-header h3 {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #a0aec0;
+            transition: color 0.3s;
+        }
+        
+        .close-modal:hover {
+            color: #e53e3e;
+        }
+        
+        .github-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        .github-form input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 14px;
+            background-color: #f8fafc;
+            transition: all 0.3s;
+        }
+        
+        .github-form input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+        
+        .form-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .empty-cell {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        
+        .date-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        
+        .table-shadow {
+            position: absolute;
+            bottom: -10px;
+            left: 5%;
+            width: 90%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 50%;
+            z-index: -1;
+        }
+        
+        .table-scroll-indicator {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(26, 115, 232, 0.1);
+            color: #1a73e8;
+            padding: 5px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: none;
+        }
+        
+        @media (max-width: 1024px) {
+            .table-scroll-indicator {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-filter {
+                justify-content: space-between;
+                width: 100%;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+                width: 100%;
+            }
+            
+            .btn {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+        
+        /* Styling for table borders */
+        table {
+            border: 1px solid #e2e8f0;
+        }
+        
+        th, td {
+            border-right: 1px solid #f1f5f9;
+        }
+        
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>Cash Collection and Monitoring Mechanism</h1>
+                    <p class="subtitle">Track and manage collection center transactions efficiently</p>
+                </div>
+                <button class="github-import" id="githubImportBtn">
+                    <i class="fas fa-database"></i> Import Data
+                </button>
+            </div>
+        </header>
+        
+        <div class="controls">
+            <div class="date-filter">
+                <label for="dateFilter">Filter by Date:</label>
+                <input type="date" id="dateFilter">
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="chequeDataBtn">
+                    <i class="fas fa-money-check-alt"></i> Cheque Data
+                </button>
+                <button class="btn btn-success" id="neftDataBtn">
+                    <i class="fas fa-exchange-alt"></i> NEFT Data
+                </button>
+                <button class="btn btn-warning" id="bankStatementBtn">
+                    <i class="fas fa-file-invoice-dollar"></i> Bank Statement
+                </button>
+                <button class="btn btn-info" id="dashboardBtn">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </button>
+            </div>
+        </div>
+        
+        <div class="data-table-container">
+            <div class="table-scroll-indicator">
+                <i class="fas fa-arrows-alt-h"></i> Scroll
+            </div>
+            <table id="collectionTable">
+                <thead>
+                    <tr class="main-header">
+                        <th rowspan="2">Date</th>
+                        <th rowspan="2">CC Name</th>
+                        <th colspan="2">Rcpt No</th>
+                        <th rowspan="2">Mode</th>
+                        <th colspan="2">Collection</th>
+                        <th colspan="2">Deposited In Bank</th>
+                        <th colspan="2">Cancel Rcpt</th>
+                        <th rowspan="2">Remark</th>
+                    </tr>
+                    <tr class="sub-header">
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Rcpt</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Rcpt</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Table content will be populated by JavaScript -->
+                </tbody>
+            </table>
+            <div class="table-shadow"></div>
+        </div>
+        
+        <div class="github-modal" id="githubModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Import Data</h3>
+                    <button class="close-modal" id="closeModalBtn">&times;</button>
+                </div>
+                <div class="github-form">
+                    <label for="repoUrl">GitHub Repository URL:</label>
+                    <input type="text" id="repoUrl" placeholder="https://github.com/username/repository">
+                    
+                    <label for="dataFile">Data File Path:</label>
+                    <input type="text" id="dataFile" placeholder="data/collection_data.json">
+                    
+                    <label for="githubToken">GitHub Token (Optional):</label>
+                    <input type="password" id="githubToken" placeholder="For private repositories">
+                    
+                    <div class="form-buttons">
+                        <button class="btn btn-info" id="cancelImportBtn">Cancel</button>
+                        <button class="btn btn-primary" id="importDataBtn">Import Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Cash Collection and Monitoring Mechanism &copy; 2023 | Data updated on: <span id="currentDate"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for the table
+        const collectionCenters = [
+            "Medha Office Collection",
+            "KLSGBSS Kudal",
+            "KLSGBSS Medha",
+            "DMKSP Dapawadi",
+            "KLSGBSS Saigaon",
+            "KLSGBSS Karhar"
+        ];
+        
+        const modes = ["Cash", "Cheque", "NEFT", "Total"];
+        
+        // Month names for date formatting
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        // Format date to DD-MMM-YY
+        function formatDate(date) {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear().toString().slice(-2);
+            return `${day}-${month}-${year}`;
+        }
+        
+        // Generate empty table structure without default values
+        function generateEmptyTable() {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // Current date for the table
+            const currentDate = new Date();
+            const formattedDate = formatDate(currentDate);
+            
+            // Generate empty structure for each collection center
+            collectionCenters.forEach(center => {
+                // Add collection center row
+                const centerRow = document.createElement('tr');
+                centerRow.innerHTML = `
+                    <td class="collection-center" colspan="12">${center}</td>
+                `;
+                tableBody.appendChild(centerRow);
+                
+                // Add mode rows for each collection center
+                modes.forEach((mode, index) => {
+                    const modeRow = document.createElement('tr');
+                    
+                    // Apply highlight-total class to entire row for Total rows
+                    if (mode === 'Total') {
+                        modeRow.className = 'highlight-total';
+                    } else {
+                        modeRow.className = 'mode-row';
+                    }
+                    
+                    // Create empty cells - Collection Amount column should NOT have date
+                    modeRow.innerHTML = `
+                        <td class="date-cell">${formattedDate}</td>
+                        <td class="mode-label">${mode}</td>
+                        <td class="empty-cell">-</td>
+                        <td class="empty-cell">-</td>
+                        <td class="empty-cell">-</td>
+                        <td class="empty-cell">-</td>
+                        <td class="empty-cell">-</td>
+                        <td class="empty-cell">-</td>
+                        <td class="empty-cell">-</td>
+                        <td class="empty-cell">-</td>
+                        <td class="remark-cell"></td>
+                    `;
+                    tableBody.appendChild(modeRow);
+                });
+            });
+            
+            // Update current date in footer
+            document.getElementById('currentDate').textContent = formattedDate;
+        }
+        
+        // Generate sample data (for demonstration only)
+        function generateSampleData() {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // Current date for the table
+            const currentDate = new Date();
+            const formattedDate = formatDate(currentDate);
+            
+            // Generate data for each collection center
+            collectionCenters.forEach(center => {
+                // Add collection center row
+                const centerRow = document.createElement('tr');
+                centerRow.innerHTML = `
+                    <td class="collection-center" colspan="12">${center}</td>
+                `;
+                tableBody.appendChild(centerRow);
+                
+                // Add mode rows for each collection center
+                modes.forEach((mode, index) => {
+                    const modeRow = document.createElement('tr');
+                    
+                    // Apply highlight-total class to entire row for Total rows
+                    if (mode === 'Total') {
+                        modeRow.className = 'highlight-total';
+                    } else {
+                        modeRow.className = 'mode-row';
+                    }
+                    
+                    // Generate random data only for demonstration
+                    const rcptFrom = Math.floor(Math.random() * 50) + 100;
+                    const rcptTo = rcptFrom + Math.floor(Math.random() * 10);
+                    const collectionRcpt = rcptTo - rcptFrom + 1;
+                    
+                    // Calculate amounts based on mode
+                    let collectionAmount;
+                    if (mode === 'Cash') {
+                        collectionAmount = Math.floor(Math.random() * 50000) + 10000;
+                    } else if (mode === 'Cheque') {
+                        collectionAmount = Math.floor(Math.random() * 30000) + 8000;
+                    } else if (mode === 'NEFT') {
+                        collectionAmount = Math.floor(Math.random() * 40000) + 12000;
+                    } else {
+                        // Total row
+                        collectionAmount = Math.floor(Math.random() * 120000) + 30000;
+                    }
+                    
+                    const depositAmount = mode === 'Total' ? 
+                        Math.floor(collectionAmount * 0.95) : 
+                        Math.floor(collectionAmount * 0.95);
+                    
+                    const cancelRcpt = mode === 'Total' ? 
+                        Math.floor(Math.random() * 5) : 
+                        Math.floor(Math.random() * 2);
+                    
+                    const cancelAmount = cancelRcpt * (mode === 'Cash' ? 100 : mode === 'Cheque' ? 500 : 200);
+                    
+                    // Format amounts without ₹ symbol
+                    const formatAmount = (amount) => {
+                        return amount.toLocaleString('en-IN');
+                    };
+                    
+                    // Collection Amount column should NOT have date - it should have amount value
+                    modeRow.innerHTML = `
+                        <td class="date-cell">${formattedDate}</td>
+                        <td class="mode-label">${mode}</td>
+                        <td>${rcptFrom}</td>
+                        <td>${rcptTo}</td>
+                        <td>${collectionRcpt}</td>
+                        <td class="${mode === 'Total' ? '' : 'amount-cell'}">${formatAmount(collectionAmount)}</td>
+                        <td class="date-cell">${formattedDate}</td>
+                        <td class="${mode === 'Total' ? '' : 'amount-cell'}">${formatAmount(depositAmount)}</td>
+                        <td>${cancelRcpt}</td>
+                        <td class="${mode === 'Total' ? '' : 'amount-cell'}">${cancelAmount > 0 ? formatAmount(cancelAmount) : '-'}</td>
+                        <td class="remark-cell">${mode === 'Cash' ? 'Cash collection' : mode === 'Cheque' ? 'Cheque pending' : mode === 'NEFT' ? 'NEFT verified' : ''}</td>
+                    `;
+                    tableBody.appendChild(modeRow);
+                });
+            });
+            
+            // Update current date in footer
+            document.getElementById('currentDate').textContent = formattedDate;
+        }
+        
+        // GitHub import modal functionality
+        document.getElementById('githubImportBtn').addEventListener('click', function() {
+            document.getElementById('githubModal').style.display = 'flex';
+        });
+        
+        document.getElementById('closeModalBtn').addEventListener('click', function() {
+            document.getElementById('githubModal').style.display = 'none';
+        });
+        
+        document.getElementById('cancelImportBtn').addEventListener('click', function() {
+            document.getElementById('githubModal').style.display = 'none';
+        });
+        
+        document.getElementById('importDataBtn').addEventListener('click', function() {
+            const repoUrl = document.getElementById('repoUrl').value;
+            const dataFile = document.getElementById('dataFile').value;
+            
+            if (!repoUrl || !dataFile) {
+                showNotification('Please enter both Repository URL and Data File Path', 'warning');
+                return;
+            }
+            
+            // Simulate importing data
+            showNotification('Importing data from repository...', 'info');
+            
+            // For demo purposes, generate sample data after a short delay
+            setTimeout(() => {
+                generateSampleData();
+                showNotification('Data imported successfully!', 'success');
+                
+                // Close the modal
+                document.getElementById('githubModal').style.display = 'none';
+                
+                // Clear the form
+                document.getElementById('repoUrl').value = '';
+                document.getElementById('dataFile').value = '';
+                document.getElementById('githubToken').value = '';
+            }, 1500);
+        });
+        
+        // Action buttons functionality
+        document.getElementById('chequeDataBtn').addEventListener('click', function() {
+            showNotification('Displaying Cheque Data view', 'info');
+            filterTableByMode('Cheque');
+        });
+        
+        document.getElementById('neftDataBtn').addEventListener('click', function() {
+            showNotification('Displaying NEFT Data view', 'info');
+            filterTableByMode('NEFT');
+        });
+        
+        document.getElementById('bankStatementBtn').addEventListener('click', function() {
+            showNotification('Opening Bank Statement view', 'info');
+        });
+        
+        document.getElementById('dashboardBtn').addEventListener('click', function() {
+            showNotification('Opening Dashboard view', 'info');
+        });
+        
+        // Date filter functionality
+        document.getElementById('dateFilter').addEventListener('change', function() {
+            const selectedDate = this.value;
+            if (selectedDate) {
+                const date = new Date(selectedDate);
+                const formattedDate = formatDate(date);
+                showNotification(`Filtering data for date: ${formattedDate}`, 'info');
+                
+                // Update date cells in the table
+                const dateCells = document.querySelectorAll('.date-cell');
+                dateCells.forEach(cell => {
+                    if (!cell.classList.contains('empty-cell')) {
+                        cell.textContent = formattedDate;
+                    }
+                });
+            }
+        });
+        
+        // Function to filter table by mode
+        function filterTableByMode(mode) {
+            const rows = document.querySelectorAll('#tableBody tr');
+            
+            rows.forEach(row => {
+                const modeCell = row.querySelector('.mode-label');
+                if (modeCell) {
+                    const rowMode = modeCell.textContent.trim();
+                    if (rowMode === mode || mode === 'All') {
+                        row.style.display = '';
+                    } else if (rowMode === 'Total') {
+                        // Show total rows when filtering
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+                
+                // Show collection center headers
+                if (row.querySelector('.collection-center')) {
+                    row.style.display = '';
+                }
+            });
+            
+            // Reset button to show all data
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'btn btn-info';
+            resetBtn.innerHTML = '<i class="fas fa-redo"></i> Show All';
+            resetBtn.style.marginLeft = '10px';
+            resetBtn.onclick = function() {
+                rows.forEach(row => row.style.display = '');
+                resetBtn.remove();
+                showNotification('Showing all data', 'info');
+            };
+            
+            // Remove previous reset button if exists
+            const existingResetBtn = document.querySelector('.reset-filter-btn');
+            if (existingResetBtn) existingResetBtn.remove();
+            
+            resetBtn.classList.add('reset-filter-btn');
+            document.querySelector('.action-buttons').appendChild(resetBtn);
+        }
+        
+        // Function to show notifications
+        function showNotification(message, type) {
+            // Remove existing notification
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) existingNotification.remove();
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 25px;
+                right: 25px;
+                padding: 14px 22px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 1001;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                animation: slideIn 0.3s ease;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            `;
+            
+            // Set background color based on type
+            if (type === 'success') {
+                notification.style.backgroundColor = '#27ae60';
+                notification.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            } else if (type === 'info') {
+                notification.style.backgroundColor = '#3498db';
+                notification.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+            } else if (type === 'warning') {
+                notification.style.backgroundColor = '#f39c12';
+                notification.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+            
+            // Add CSS animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Initialize the table with empty data
+        window.onload = function() {
+            generateEmptyTable();
+            
+            // Set today's date as default in the date filter
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = today;
+            
+            // Add row hover effect
+            const tableRows = document.querySelectorAll('#tableBody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('highlight-total') && !this.querySelector('.collection-center')) {
+                        this.style.transform = 'translateY(-2px)';
+                        this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.05)';
+                    }
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            });
+        };
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('githubModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
