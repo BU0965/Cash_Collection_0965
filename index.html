@@ -305,12 +305,16 @@
             background-color: white;
         }
         
+        /* रिमार्क कॉलमसाठी नवीन CSS - Wrap Text साठी */
         .remark-cell {
-            width: auto;
-            min-width: unset;
-            max-width: unset;
+            width: 300px; /* निश्चित रुंदी */
+            min-width: 250px;
+            max-width: 350px;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            white-space: normal !important; /* Wrap text साठी */
+            overflow: hidden;
+            text-overflow: ellipsis;
             color: #4a5568;
             font-size: 14px;
             font-style: italic;
@@ -318,6 +322,7 @@
             text-align: left;
             vertical-align: top;
             border-right: 1px solid #000000;
+            line-height: 1.5;
         }
         
         .amount-cell {
@@ -599,10 +604,14 @@
             cursor: pointer;
             min-height: 80px;
             vertical-align: top;
-            width: auto;
-            min-width: 0;
+            width: 300px;
+            min-width: 250px;
+            max-width: 350px;
             border-right: 1px solid #000000;
-            white-space: normal !important;
+            white-space: normal !important; /* Wrap text साठी */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.5;
         }
 
         .remark-editable-cell:hover {
@@ -619,6 +628,9 @@
             font-size: 14px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             resize: vertical;
+            white-space: pre-wrap; /* Wrap text साठी */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .remark-textarea:focus {
@@ -715,7 +727,7 @@
                         <th colspan="2" style="border-top: 1px solid #000000;">Collection</th>
                         <th colspan="2" style="border-top: 1px solid #000000;">Deposited In Bank</th>
                         <th colspan="2" style="border-top: 1px solid #000000;">Cancel Rcpt</th>
-                        <th rowspan="2" style="border-top: 1px solid #000000; border-right: 1px solid #000000;">Remark</th>
+                        <th rowspan="2" style="border-top: 1px solid #000000; border-right: 1px solid #000000; width: 300px; min-width: 250px;">Remark</th>
                     </tr>
                     <tr class="sub-header">
                         <th style="border-left: 1px solid #000000;">From</th>
@@ -884,14 +896,14 @@
             return false;
         }
         
-        // Save bank deposit data
+        // Save bank deposit data to Excel and create download
         async function saveBankDepositData() {
             try {
                 // Prepare data with proper headers
                 const exportData = bankDepositData.map(entry => ({
                     'Collection Date': entry.collectionDate,
                     'Collection Center Code': entry.centerCode,
-                    'Mode': 'Cash', // Always Cash mode for Excel export
+                    'Mode': entry.mode || 'Cash',
                     'Deposit Date': entry.depositDate,
                     'Deposit Amount': entry.depositAmount,
                     'Remark': entry.remark || '',
@@ -921,6 +933,9 @@
                 
                 showNotification('Bank deposit data exported successfully!', 'success');
                 
+                // Also save a copy locally in localStorage as backup
+                localStorage.setItem('bankDepositDataBackup', JSON.stringify(bankDepositData));
+                
             } catch (error) {
                 console.error('Error saving bank deposit data:', error);
                 showNotification('Error exporting data', 'warning');
@@ -942,28 +957,46 @@
             return deposit ? deposit.remark : '';
         }
         
-// Save bank deposit entry
-function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, depositAmount, remark) {
-    // Remove existing entry if exists
-    bankDepositData = bankDepositData.filter(entry => 
-        !(entry.collectionDate === collectionDate &&
-          entry.centerCode === centerCode &&
-          entry.mode === mode)
-    );
-    
-    // Add new entry (save all modes to data, but Excel will show only Cash)
-    if (depositDate || depositAmount || remark) {  // या line मध्ये बदल
-        bankDepositData.push({
-            collectionDate: collectionDate,
-            centerCode: centerCode,
-            mode: mode,
-            depositDate: depositDate || '',
-            depositAmount: depositAmount ? parseFloat(depositAmount) : '',
-            remark: remark || '',  // रिमार्क 
-            entryDate: new Date().toISOString().split('T')[0]
-        });
-    }
-}
+        // Save bank deposit entry
+        function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, depositAmount, remark) {
+            // Remove existing entry if exists
+            bankDepositData = bankDepositData.filter(entry => 
+                !(entry.collectionDate === collectionDate &&
+                  entry.centerCode === centerCode &&
+                  entry.mode === mode)
+            );
+            
+            // Add new entry
+            bankDepositData.push({
+                collectionDate: collectionDate,
+                centerCode: centerCode,
+                mode: mode,
+                depositDate: depositDate || '',
+                depositAmount: depositAmount ? parseFloat(depositAmount) : '',
+                remark: remark || '',
+                entryDate: new Date().toISOString().split('T')[0]
+            });
+            
+            // Also update remark for all modes to ensure consistency
+            if (remark && mode === 'Cash') {
+                // Update remark for other modes of same center and date
+                const otherModes = ['Cheque', 'NEFT', 'Total'];
+                otherModes.forEach(otherMode => {
+                    const existingEntry = bankDepositData.find(entry => 
+                        entry.collectionDate === collectionDate &&
+                        entry.centerCode === centerCode &&
+                        entry.mode === otherMode
+                    );
+                    
+                    if (existingEntry) {
+                        existingEntry.remark = remark;
+                    }
+                });
+            }
+            
+            // Save backup to localStorage
+            localStorage.setItem('bankDepositDataBackup', JSON.stringify(bankDepositData));
+        }
         
         // Process CSV data for table display
         function processCSVData(csvData, collectionDate) {
@@ -1199,22 +1232,24 @@ function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, dep
                     let remarkCell = '';
                     if (mode === 'Cash') {
                         const remarkValue = center.remark || '';
+                        // Format remark text with line breaks
+                        const formattedRemark = remarkValue ? remarkValue.replace(/\n/g, '<br>') : '';
                         remarkCell = `
                             <td class="remark-editable-cell remark-cell" rowspan="4"
                                 data-collection-date="${collectionDateStr}"
                                 data-center="${center.name}"
                                 data-type="remark"
                                 data-value="${remarkValue}">
-                                ${remarkValue || ''}
+                                ${formattedRemark || ''}
                                 <span class="edit-icon" style="right: 10px;"><i class="fas fa-edit"></i></span>
                             </td>
                         `;
                     } else if (mode === 'Cheque' || mode === 'NEFT') {
                         // Empty cells for Cheque and NEFT
-                        remarkCell = ``; // NOTHING
+                        remarkCell = ``;
                     } else if (mode === 'Total') {
                         // Total row doesn't need remark cell
-                        remarkCell = ``; // NOTHING – IMPORTANT
+                        remarkCell = ``;
                     }
                     
                     // Generate row
@@ -1329,7 +1364,7 @@ function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, dep
                 placeholder = 'Enter amount';
             } else if (type === 'remark') {
                 inputType = 'text';
-                placeholder = 'Enter remark';
+                placeholder = 'Enter remark (multiple lines allowed)';
             }
             
             let input;
@@ -1337,6 +1372,9 @@ function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, dep
                 input = document.createElement('textarea');
                 input.className = 'remark-textarea';
                 input.rows = 4;
+                input.style.whiteSpace = 'pre-wrap';
+                input.style.wordWrap = 'break-word';
+                input.style.overflowWrap = 'break-word';
             } else {
                 input = document.createElement('input');
                 input.type = inputType;
@@ -1407,7 +1445,9 @@ function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, dep
                     cell.dataset.value = '';
                 }
             } else if (type === 'remark') {
-                cell.innerHTML = (newValue || '') + 
+                // Preserve line breaks in remark
+                const formattedRemark = newValue ? newValue.replace(/\n/g, '<br>') : '';
+                cell.innerHTML = (formattedRemark || '') + 
                     '<span class="edit-icon" style="right: 10px;"><i class="fas fa-edit"></i></span>';
                 cell.dataset.value = newValue;
             }
@@ -1431,7 +1471,7 @@ function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, dep
                 cell.addEventListener('click', handleCellClick);
             }
             
-            showNotification('Value saved successfully!', 'success');
+            showNotification('Value saved successfully to Bank Deposit data!', 'success');
         }
         
         // Update total deposit amount in Total rows (sum of ALL modes)
@@ -1696,12 +1736,30 @@ function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, dep
             // Load existing bank deposit data
             await loadBankDepositData();
             
+            // Check for localStorage backup
+            try {
+                const backup = localStorage.getItem('bankDepositDataBackup');
+                if (backup) {
+                    const backupData = JSON.parse(backup);
+                    // Merge backup data with loaded data
+                    backupData.forEach(entry => {
+                        const exists = bankDepositData.some(e => 
+                            e.collectionDate === entry.collectionDate &&
+                            e.centerCode === entry.centerCode &&
+                            e.mode === entry.mode
+                        );
+                        if (!exists) {
+                            bankDepositData.push(entry);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log('No valid backup data found in localStorage');
+            }
+            
             // Initialize edit mode as disabled
             disableEditMode();
         };
     </script>
 </body>
-
 </html>
-
-
