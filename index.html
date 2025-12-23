@@ -886,7 +886,8 @@
                         entryDate: row['Entry Date'] || new Date().toISOString().split('T')[0]
                     }));
                     
-                    console.log(`Loaded ${bankDepositData.length} bank deposit records`);
+                    console.log(`Loaded ${bankDepositData.length} bank deposit records from Excel file`);
+                    console.log('Sample data:', bankDepositData.slice(0, 3));
                     return true;
                 }
             } catch (error) {
@@ -951,13 +952,28 @@
             );
         }
         
-        // Get remark for a specific center
+        // Get remark for a specific center - UPDATED TO CHECK ALL MODES
         function getRemark(collectionDate, centerCode) {
-            const deposit = getBankDeposit(collectionDate, centerCode, 'Cash');
-            return deposit ? deposit.remark : '';
+            // First try Cash mode
+            let deposit = getBankDeposit(collectionDate, centerCode, 'Cash');
+            if (deposit && deposit.remark) return deposit.remark;
+            
+            // Then try Cheque mode
+            deposit = getBankDeposit(collectionDate, centerCode, 'Cheque');
+            if (deposit && deposit.remark) return deposit.remark;
+            
+            // Then try NEFT mode
+            deposit = getBankDeposit(collectionDate, centerCode, 'NEFT');
+            if (deposit && deposit.remark) return deposit.remark;
+            
+            // Finally try Total mode
+            deposit = getBankDeposit(collectionDate, centerCode, 'Total');
+            if (deposit && deposit.remark) return deposit.remark;
+            
+            return '';
         }
         
-        // Save bank deposit entry
+        // Save bank deposit entry - UPDATED TO ENSURE REMARK IS SAVED FOR CASH MODE
         function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, depositAmount, remark) {
             // Remove existing entry if exists
             bankDepositData = bankDepositData.filter(entry => 
@@ -977,25 +993,36 @@
                 entryDate: new Date().toISOString().split('T')[0]
             });
             
-            // Also update remark for all modes to ensure consistency
-            if (remark && mode === 'Cash') {
-                // Update remark for other modes of same center and date
-                const otherModes = ['Cheque', 'NEFT', 'Total'];
-                otherModes.forEach(otherMode => {
-                    const existingEntry = bankDepositData.find(entry => 
-                        entry.collectionDate === collectionDate &&
-                        entry.centerCode === centerCode &&
-                        entry.mode === otherMode
-                    );
+            // CRITICAL FIX: If remark is entered for Cash mode, also save it for other modes
+            // This ensures the remark is available when the page is reloaded
+            if (mode === 'Cash' && remark) {
+                // Also save the same remark for Cheque, NEFT and Total modes
+                ['Cheque', 'NEFT', 'Total'].forEach(otherMode => {
+                    // Check if entry exists for this mode
+                    const existingEntry = getBankDeposit(collectionDate, centerCode, otherMode);
                     
                     if (existingEntry) {
+                        // Update existing entry with same remark
                         existingEntry.remark = remark;
+                    } else {
+                        // Create new entry with same remark
+                        bankDepositData.push({
+                            collectionDate: collectionDate,
+                            centerCode: centerCode,
+                            mode: otherMode,
+                            depositDate: '',
+                            depositAmount: '',
+                            remark: remark,
+                            entryDate: new Date().toISOString().split('T')[0]
+                        });
                     }
                 });
             }
             
             // Save backup to localStorage
             localStorage.setItem('bankDepositDataBackup', JSON.stringify(bankDepositData));
+            
+            console.log(`Saved entry: ${collectionDate}, ${centerCode}, ${mode}, Remark: "${remark}"`);
         }
         
         // Process CSV data for table display
@@ -1117,7 +1144,7 @@
                     }
                 });
                 
-                // Get remark for this center
+                // Get remark for this center - UPDATED FUNCTION
                 center.remark = getRemark(collectionDate, center.name);
                 
                 // Overall center statistics
@@ -1162,6 +1189,9 @@
                     <td class="collection-center" colspan="11" style="border-left: 1px solid #000000; border-right: 1px solid #000000;">${center.name}</td>
                 `;
                 tableBody.appendChild(centerRow);
+                
+                // Get remark for this center - DEBUG LOG
+                console.log(`Center: ${center.name}, Remark from data: "${center.remark}"`);
                 
                 // Add rows for each mode
                 MODES.forEach(mode => {
@@ -1450,6 +1480,15 @@
                 cell.innerHTML = (formattedRemark || '') + 
                     '<span class="edit-icon" style="right: 10px;"><i class="fas fa-edit"></i></span>';
                 cell.dataset.value = newValue;
+                
+                // IMPORTANT: When remark is saved, also update the remark display in the table
+                // This ensures the remark is immediately visible
+                const allRemarkCells = document.querySelectorAll('.remark-editable-cell[data-collection-date="' + collectionDate + '"][data-center="' + center + '"]');
+                allRemarkCells.forEach(remarkCell => {
+                    remarkCell.innerHTML = (formattedRemark || '') + 
+                        '<span class="edit-icon" style="right: 10px;"><i class="fas fa-edit"></i></span>';
+                    remarkCell.dataset.value = newValue;
+                });
             }
             
             // Save to bank deposit data
@@ -1733,14 +1772,17 @@
                 border: 1px solid rgba(255, 255, 255, 0.25);
             `;
             
-            // Load existing bank deposit data
+            // Load existing bank deposit data from Excel file
+            console.log('Loading bank deposit data from Excel file...');
             await loadBankDepositData();
             
-            // Check for localStorage backup
+            // Check for localStorage backup and merge with loaded data
             try {
                 const backup = localStorage.getItem('bankDepositDataBackup');
                 if (backup) {
                     const backupData = JSON.parse(backup);
+                    console.log(`Found ${backupData.length} backup records in localStorage`);
+                    
                     // Merge backup data with loaded data
                     backupData.forEach(entry => {
                         const exists = bankDepositData.some(e => 
@@ -1752,10 +1794,17 @@
                             bankDepositData.push(entry);
                         }
                     });
+                    console.log(`Total bank deposit records after merge: ${bankDepositData.length}`);
                 }
             } catch (e) {
                 console.log('No valid backup data found in localStorage');
             }
+            
+            // Debug: Log sample data to confirm remarks are loaded
+            console.log('Sample bank deposit data with remarks:');
+            bankDepositData.filter(entry => entry.remark).slice(0, 5).forEach(entry => {
+                console.log(`- ${entry.collectionDate}, ${entry.centerCode}, ${entry.mode}: "${entry.remark}"`);
+            });
             
             // Initialize edit mode as disabled
             disableEditMode();
