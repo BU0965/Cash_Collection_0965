@@ -942,28 +942,28 @@
             return deposit ? deposit.remark : '';
         }
         
-        // Save bank deposit entry
-        function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, depositAmount, remark) {
-            // Remove existing entry if exists
-            bankDepositData = bankDepositData.filter(entry => 
-                !(entry.collectionDate === collectionDate &&
-                  entry.centerCode === centerCode &&
-                  entry.mode === mode)
-            );
-            
-            // Add new entry (save all modes to data, but Excel will show only Cash)
-            if (depositDate && depositAmount) {
-                bankDepositData.push({
-                    collectionDate: collectionDate,
-                    centerCode: centerCode,
-                    mode: mode,
-                    depositDate: depositDate,
-                    depositAmount: parseFloat(depositAmount),
-                    remark: remark || '',
-                    entryDate: new Date().toISOString().split('T')[0]
-                });
-            }
-        }
+// Save bank deposit entry
+function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, depositAmount, remark) {
+    // Remove existing entry if exists
+    bankDepositData = bankDepositData.filter(entry => 
+        !(entry.collectionDate === collectionDate &&
+          entry.centerCode === centerCode &&
+          entry.mode === mode)
+    );
+    
+    // Add new entry (save all modes to data, but Excel will show only Cash)
+    if (depositDate || depositAmount || remark) {  // या line मध्ये बदल
+        bankDepositData.push({
+            collectionDate: collectionDate,
+            centerCode: centerCode,
+            mode: mode,
+            depositDate: depositDate || '',
+            depositAmount: depositAmount ? parseFloat(depositAmount) : '',
+            remark: remark || '',  // रिमार्क 
+            entryDate: new Date().toISOString().split('T')[0]
+        });
+    }
+}
         
         // Process CSV data for table display
         function processCSVData(csvData, collectionDate) {
@@ -1703,4 +1703,5 @@
 </body>
 
 </html>
+
 
