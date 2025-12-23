@@ -181,6 +181,16 @@
             box-shadow: 0 6px 12px rgba(127, 140, 141, 0.3);
         }
         
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(231, 76, 60, 0.3);
+        }
+        
         .data-table-container {
             background-color: white;
             border-radius: 12px;
@@ -543,7 +553,7 @@
             padding: 30px;
             border-radius: 12px;
             width: 90%;
-            max-width: 400px;
+            max-width: 500px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             animation: modalAppear 0.3s ease;
             border: 1px solid #eef2f7;
@@ -676,6 +686,9 @@
                     <div id="editModeIndicator" class="edit-mode-indicator" style="display: none;">
                         <i class="fas fa-edit"></i> Edit Mode Active
                     </div>
+                    <button class="btn btn-danger" id="githubConfigBtn" title="Configure GitHub API">
+                        <i class="fab fa-github"></i> GitHub Setup
+                    </button>
                 </div>
             </div>
         </header>
@@ -687,8 +700,8 @@
                 <button class="btn btn-primary" id="loadDataBtn">
                     <i class="fas fa-sync-alt"></i> Load Data
                 </button>
-                <button class="btn btn-success" id="exportDataBtn">
-                    <i class="fas fa-file-export"></i> Export Bank Data
+                <button class="btn btn-success" id="saveToGitHubBtn">
+                    <i class="fas fa-cloud-upload-alt"></i> Save to GitHub
                 </button>
                 <button class="btn unlock-mode-btn" id="unlockEditBtn" style="display: none;">
                     <i class="fas fa-unlock"></i> Unlock Edit Mode
@@ -770,6 +783,41 @@
                 </div>
             </div>
         </div>
+
+        <!-- GitHub Config Modal -->
+        <div class="password-modal" id="githubConfigModal">
+            <div class="password-modal-content">
+                <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9;">
+                    <h3 style="color: #2c3e50; font-size: 18px; font-weight: 700;">GitHub API Configuration</h3>
+                    <button class="close-modal" id="closeGitHubModalBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #a0aec0;">&times;</button>
+                </div>
+                <div class="password-form">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2d3748;">GitHub Personal Access Token:</label>
+                        <input type="password" id="githubTokenInput" placeholder="Enter GitHub Personal Access Token" autocomplete="off">
+                        <small style="display: block; margin-top: 5px; color: #718096;">
+                            Create token at: <a href="https://github.com/settings/tokens" target="_blank" style="color: #1a73e8;">github.com/settings/tokens</a><br>
+                            Required permissions: repo (full control of private repositories)
+                        </small>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2d3748;">Repository Details:</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" id="githubUserInput" placeholder="GitHub Username" value="bu0965">
+                            <input type="text" id="githubRepoInput" placeholder="Repository Name" value="Cash_Collection_0965">
+                        </div>
+                        <input type="text" id="githubBranchInput" placeholder="Branch Name" value="main" style="margin-bottom: 10px;">
+                        <input type="text" id="githubFileName" placeholder="Excel File Name" value="Bank_Deposit.xlsx">
+                    </div>
+                    
+                    <div class="form-buttons" style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
+                        <button class="btn btn-info" id="cancelGitHubBtn">Cancel</button>
+                        <button class="btn btn-primary" id="saveGitHubConfigBtn">Save Configuration</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <div class="footer">
             <p>Cash Collection and Monitoring Mechanism &copy; 2023 | Last updated: <span id="currentDate"></span></p>
@@ -777,12 +825,17 @@
     </div>
 
     <script>
-        // GitHub repository details
-        const GITHUB_USER = "bu0965";
-        const GITHUB_REPO = "Cash_Collection_0965";
-        const GITHUB_BRANCH = "main";
+        // GitHub configuration
+        let GITHUB_CONFIG = {
+            USER: "bu0965",
+            REPO: "Cash_Collection_0965",
+            BRANCH: "main",
+            FILE_NAME: "Bank_Deposit.xlsx",
+            TOKEN: null
+        };
+        
+        // App configuration
         const PASSWORD = "3303";
-        const BANK_DEPOSIT_FILE = "Bank_Deposit.xlsx";
         
         // Collection modes
         const MODES = ["Cash", "Cheque", "NEFT", "Total"];
@@ -792,6 +845,35 @@
         let isEditModeActive = false;
         let currentCentersData = [];
         let currentCollectionDate = '';
+        let autoSaveTimer = null;
+        let isGitHubConfigured = false;
+        
+        // Load GitHub configuration from localStorage
+        function loadGitHubConfig() {
+            const savedConfig = localStorage.getItem('githubConfig');
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    GITHUB_CONFIG.USER = config.USER || GITHUB_CONFIG.USER;
+                    GITHUB_CONFIG.REPO = config.REPO || GITHUB_CONFIG.REPO;
+                    GITHUB_CONFIG.BRANCH = config.BRANCH || GITHUB_CONFIG.BRANCH;
+                    GITHUB_CONFIG.FILE_NAME = config.FILE_NAME || GITHUB_CONFIG.FILE_NAME;
+                    GITHUB_CONFIG.TOKEN = config.TOKEN || null;
+                    
+                    isGitHubConfigured = !!GITHUB_CONFIG.TOKEN;
+                    console.log('GitHub configuration loaded:', { ...GITHUB_CONFIG, TOKEN: GITHUB_CONFIG.TOKEN ? '***' + GITHUB_CONFIG.TOKEN.slice(-4) : null });
+                } catch (e) {
+                    console.error('Error loading GitHub config:', e);
+                }
+            }
+        }
+        
+        // Save GitHub configuration to localStorage
+        function saveGitHubConfig() {
+            localStorage.setItem('githubConfig', JSON.stringify(GITHUB_CONFIG));
+            isGitHubConfigured = !!GITHUB_CONFIG.TOKEN;
+            console.log('GitHub configuration saved');
+        }
         
         // Format date to DD-MM-YYYY for filename
         function formatDateForFileName(date) {
@@ -813,12 +895,12 @@
         // Get CSV file URL for selected date
         function getCsvFileUrl(date) {
             const formattedDate = formatDateForFileName(date);
-            return `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/CC_${formattedDate}.csv`;
+            return `https://raw.githubusercontent.com/${GITHUB_CONFIG.USER}/${GITHUB_CONFIG.REPO}/${GITHUB_CONFIG.BRANCH}/CC_${formattedDate}.csv`;
         }
         
         // Get Bank Deposit Excel file URL
         function getBankDepositFileUrl() {
-            return `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${BANK_DEPOSIT_FILE}`;
+            return `https://raw.githubusercontent.com/${GITHUB_CONFIG.USER}/${GITHUB_CONFIG.REPO}/${GITHUB_CONFIG.BRANCH}/${GITHUB_CONFIG.FILE_NAME}`;
         }
         
         // Parse CSV data
@@ -868,6 +950,7 @@
         async function loadBankDepositData() {
             try {
                 const url = getBankDepositFileUrl() + `?t=${Date.now()}`;
+                console.log('Loading bank deposit data from:', url);
                 const response = await fetch(url);
                 
                 if (response.ok) {
@@ -881,13 +964,12 @@
                         centerCode: row['Collection Center Code'] || '',
                         mode: row['Mode'] || 'Cash',
                         depositDate: row['Deposit Date'] || '',
-                        depositAmount: row['Deposit Amount'] || '',
+                        depositAmount: row['Deposit Amount'] || 0,
                         remark: row['Remark'] || '',
                         entryDate: row['Entry Date'] || new Date().toISOString().split('T')[0]
                     }));
                     
-                    console.log(`Loaded ${bankDepositData.length} bank deposit records from Excel file`);
-                    console.log('Sample data:', bankDepositData.slice(0, 3));
+                    console.log(`Loaded ${bankDepositData.length} bank deposit records from GitHub`);
                     return true;
                 }
             } catch (error) {
@@ -897,50 +979,142 @@
             return false;
         }
         
-        // Save bank deposit data to Excel and create download
-        async function saveBankDepositData() {
+        // Create Excel file from bank deposit data
+        function createExcelFile() {
+            // Prepare data with proper headers
+            const exportData = bankDepositData.map(entry => ({
+                'Collection Date': entry.collectionDate,
+                'Collection Center Code': entry.centerCode,
+                'Mode': entry.mode || 'Cash',
+                'Deposit Date': entry.depositDate,
+                'Deposit Amount': entry.depositAmount || 0,
+                'Remark': entry.remark || '',
+                'Entry Date': entry.entryDate
+            }));
+            
+            // Create worksheet
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Bank Deposits");
+            
+            // Generate Excel file
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            
+            return excelBuffer;
+        }
+        
+        // Convert array buffer to base64
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+        
+        // Save data to GitHub using GitHub API
+        async function saveToGitHub() {
+            if (!isGitHubConfigured) {
+                showNotification('Please configure GitHub API first', 'warning');
+                openGitHubConfigModal();
+                return;
+            }
+            
             try {
-                // Prepare data with proper headers
-                const exportData = bankDepositData.map(entry => ({
-                    'Collection Date': entry.collectionDate,
-                    'Collection Center Code': entry.centerCode,
-                    'Mode': entry.mode || 'Cash',
-                    'Deposit Date': entry.depositDate,
-                    'Deposit Amount': entry.depositAmount,
-                    'Remark': entry.remark || '',
-                    'Entry Date': entry.entryDate
-                }));
+                showNotification('Saving data to GitHub...', 'info');
                 
-                // Create worksheet
-                const worksheet = XLSX.utils.json_to_sheet(exportData);
+                // Create Excel file
+                const excelBuffer = createExcelFile();
+                const base64Content = arrayBufferToBase64(excelBuffer);
                 
-                // Create workbook
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Bank Deposits");
+                // First, try to get the existing file SHA
+                let sha = null;
+                try {
+                    const getFileUrl = `https://api.github.com/repos/${GITHUB_CONFIG.USER}/${GITHUB_CONFIG.REPO}/contents/${GITHUB_CONFIG.FILE_NAME}`;
+                    const getResponse = await fetch(getFileUrl, {
+                        headers: {
+                            'Authorization': `token ${GITHUB_CONFIG.TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (getResponse.ok) {
+                        const fileData = await getResponse.json();
+                        sha = fileData.sha;
+                        console.log('Got existing file SHA:', sha);
+                    }
+                } catch (e) {
+                    console.log('File does not exist yet, will create new file');
+                }
                 
-                // Generate Excel file
-                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                // Create or update file
+                const updateUrl = `https://api.github.com/repos/${GITHUB_CONFIG.USER}/${GITHUB_CONFIG.REPO}/contents/${GITHUB_CONFIG.FILE_NAME}`;
+                const message = `Update Bank Deposit data - ${new Date().toISOString()}`;
                 
-                // Create blob and download
-                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = BANK_DEPOSIT_FILE;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                const updateData = {
+                    message: message,
+                    content: base64Content,
+                    branch: GITHUB_CONFIG.BRANCH
+                };
                 
-                showNotification('Bank deposit data exported successfully!', 'success');
+                // Add SHA if file exists (for update)
+                if (sha) {
+                    updateData.sha = sha;
+                }
                 
-                // Also save a copy locally in localStorage as backup
-                localStorage.setItem('bankDepositDataBackup', JSON.stringify(bankDepositData));
+                const response = await fetch(updateUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_CONFIG.TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('GitHub API response:', result);
+                    
+                    // Also save to localStorage as backup
+                    autoSaveData();
+                    
+                    showNotification('Data successfully saved to GitHub!', 'success');
+                    
+                    // Reload data to confirm
+                    setTimeout(async () => {
+                        await loadBankDepositData();
+                        showNotification('Data reloaded from GitHub', 'info');
+                    }, 2000);
+                    
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    console.error('GitHub API error:', errorText);
+                    showNotification(`GitHub API error: ${response.status}`, 'warning');
+                    return false;
+                }
                 
             } catch (error) {
-                console.error('Error saving bank deposit data:', error);
-                showNotification('Error exporting data', 'warning');
+                console.error('Error saving to GitHub:', error);
+                showNotification(`Error: ${error.message}`, 'warning');
+                return false;
             }
+        }
+        
+        // Auto-save data to localStorage
+        function autoSaveData() {
+            // Save to localStorage
+            localStorage.setItem('bankDepositDataBackup', JSON.stringify(bankDepositData));
+            
+            // Also save a copy with timestamp for recovery
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            localStorage.setItem(`bankDepositDataBackup_${timestamp}`, JSON.stringify(bankDepositData));
+            
+            console.log('Auto-saved bank deposit data to localStorage');
         }
         
         // Get bank deposit for a specific center and mode
@@ -952,28 +1126,22 @@
             );
         }
         
-        // Get remark for a specific center - UPDATED TO CHECK ALL MODES
+        // Get remark for a specific center
         function getRemark(collectionDate, centerCode) {
-            // First try Cash mode
-            let deposit = getBankDeposit(collectionDate, centerCode, 'Cash');
-            if (deposit && deposit.remark) return deposit.remark;
+            // Try all modes in order of priority
+            const modesToCheck = ['Cash', 'Cheque', 'NEFT', 'Total'];
             
-            // Then try Cheque mode
-            deposit = getBankDeposit(collectionDate, centerCode, 'Cheque');
-            if (deposit && deposit.remark) return deposit.remark;
-            
-            // Then try NEFT mode
-            deposit = getBankDeposit(collectionDate, centerCode, 'NEFT');
-            if (deposit && deposit.remark) return deposit.remark;
-            
-            // Finally try Total mode
-            deposit = getBankDeposit(collectionDate, centerCode, 'Total');
-            if (deposit && deposit.remark) return deposit.remark;
+            for (const mode of modesToCheck) {
+                const deposit = getBankDeposit(collectionDate, centerCode, mode);
+                if (deposit && deposit.remark && deposit.remark.trim() !== '') {
+                    return deposit.remark;
+                }
+            }
             
             return '';
         }
         
-        // Save bank deposit entry - UPDATED TO ENSURE REMARK IS SAVED FOR CASH MODE
+        // Save bank deposit entry
         function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, depositAmount, remark) {
             // Remove existing entry if exists
             bankDepositData = bankDepositData.filter(entry => 
@@ -983,46 +1151,51 @@
             );
             
             // Add new entry
-            bankDepositData.push({
+            const newEntry = {
                 collectionDate: collectionDate,
                 centerCode: centerCode,
                 mode: mode,
                 depositDate: depositDate || '',
-                depositAmount: depositAmount ? parseFloat(depositAmount) : '',
+                depositAmount: depositAmount ? parseFloat(depositAmount) : 0,
                 remark: remark || '',
                 entryDate: new Date().toISOString().split('T')[0]
-            });
+            };
             
-            // CRITICAL FIX: If remark is entered for Cash mode, also save it for other modes
-            // This ensures the remark is available when the page is reloaded
-            if (mode === 'Cash' && remark) {
-                // Also save the same remark for Cheque, NEFT and Total modes
-                ['Cheque', 'NEFT', 'Total'].forEach(otherMode => {
+            bankDepositData.push(newEntry);
+            
+            // If remark is entered, save it for ALL modes
+            if (remark && remark.trim() !== '') {
+                // Save the same remark for all other modes
+                const otherModes = MODES.filter(m => m !== mode);
+                otherModes.forEach(otherMode => {
                     // Check if entry exists for this mode
-                    const existingEntry = getBankDeposit(collectionDate, centerCode, otherMode);
+                    let otherEntry = getBankDeposit(collectionDate, centerCode, otherMode);
                     
-                    if (existingEntry) {
-                        // Update existing entry with same remark
-                        existingEntry.remark = remark;
-                    } else {
+                    if (!otherEntry) {
                         // Create new entry with same remark
-                        bankDepositData.push({
+                        otherEntry = {
                             collectionDate: collectionDate,
                             centerCode: centerCode,
                             mode: otherMode,
                             depositDate: '',
-                            depositAmount: '',
+                            depositAmount: 0,
                             remark: remark,
                             entryDate: new Date().toISOString().split('T')[0]
-                        });
+                        };
+                        bankDepositData.push(otherEntry);
+                    } else if (!otherEntry.remark || otherEntry.remark.trim() === '') {
+                        // Update existing entry with same remark
+                        otherEntry.remark = remark;
                     }
                 });
             }
             
-            // Save backup to localStorage
-            localStorage.setItem('bankDepositDataBackup', JSON.stringify(bankDepositData));
+            // Auto-save data to localStorage
+            autoSaveData();
             
-            console.log(`Saved entry: ${collectionDate}, ${centerCode}, ${mode}, Remark: "${remark}"`);
+            console.log(`Saved entry: ${collectionDate}, ${centerCode}, ${mode}, Deposit: ${depositDate}/${depositAmount}, Remark: "${remark}"`);
+            
+            return newEntry;
         }
         
         // Process CSV data for table display
@@ -1144,7 +1317,7 @@
                     }
                 });
                 
-                // Get remark for this center - UPDATED FUNCTION
+                // Get remark for this center
                 center.remark = getRemark(collectionDate, center.name);
                 
                 // Overall center statistics
@@ -1190,9 +1363,6 @@
                 `;
                 tableBody.appendChild(centerRow);
                 
-                // Get remark for this center - DEBUG LOG
-                console.log(`Center: ${center.name}, Remark from data: "${center.remark}"`);
-                
                 // Add rows for each mode
                 MODES.forEach(mode => {
                     const modeData = center.modes[mode];
@@ -1229,7 +1399,7 @@
                         cancelledAmount = center.totalCancelledAmount > 0 ? formatAmount(center.totalCancelledAmount) : '-';
                     }
                     
-                    // Handle Deposited In Bank cells - ALL MODES ARE EDITABLE
+                    // Handle Deposited In Bank cells
                     const depositDateValue = modeData.depositDate || '';
                     const depositAmountValue = modeData.depositAmount || '';
                     
@@ -1258,11 +1428,10 @@
                         </td>
                     `;
                     
-                    // Handle Remark cell - only for Cash mode, merged for all modes
+                    // Handle Remark cell
                     let remarkCell = '';
                     if (mode === 'Cash') {
                         const remarkValue = center.remark || '';
-                        // Format remark text with line breaks
                         const formattedRemark = remarkValue ? remarkValue.replace(/\n/g, '<br>') : '';
                         remarkCell = `
                             <td class="remark-editable-cell remark-cell" rowspan="4"
@@ -1274,12 +1443,6 @@
                                 <span class="edit-icon" style="right: 10px;"><i class="fas fa-edit"></i></span>
                             </td>
                         `;
-                    } else if (mode === 'Cheque' || mode === 'NEFT') {
-                        // Empty cells for Cheque and NEFT
-                        remarkCell = ``;
-                    } else if (mode === 'Total') {
-                        // Total row doesn't need remark cell
-                        remarkCell = ``;
                     }
                     
                     // Generate row
@@ -1300,7 +1463,7 @@
                 });
             });
             
-            // Calculate and update Total row deposit amount (sum of all modes)
+            // Calculate and update Total row deposit amount
             updateTotalDepositAmount();
             
             // Update edit mode
@@ -1475,20 +1638,10 @@
                     cell.dataset.value = '';
                 }
             } else if (type === 'remark') {
-                // Preserve line breaks in remark
                 const formattedRemark = newValue ? newValue.replace(/\n/g, '<br>') : '';
                 cell.innerHTML = (formattedRemark || '') + 
                     '<span class="edit-icon" style="right: 10px;"><i class="fas fa-edit"></i></span>';
                 cell.dataset.value = newValue;
-                
-                // IMPORTANT: When remark is saved, also update the remark display in the table
-                // This ensures the remark is immediately visible
-                const allRemarkCells = document.querySelectorAll('.remark-editable-cell[data-collection-date="' + collectionDate + '"][data-center="' + center + '"]');
-                allRemarkCells.forEach(remarkCell => {
-                    remarkCell.innerHTML = (formattedRemark || '') + 
-                        '<span class="edit-icon" style="right: 10px;"><i class="fas fa-edit"></i></span>';
-                    remarkCell.dataset.value = newValue;
-                });
             }
             
             // Save to bank deposit data
@@ -1502,7 +1655,7 @@
             
             saveBankDepositEntry(collectionDate, center, mode, depositDate, depositAmount, remark);
             
-            // Recalculate and update Total row deposit amount (sum of ALL modes)
+            // Recalculate and update Total row deposit amount
             updateTotalDepositAmount();
             
             // Re-add click handler for edit mode
@@ -1510,12 +1663,11 @@
                 cell.addEventListener('click', handleCellClick);
             }
             
-            showNotification('Value saved successfully to Bank Deposit data!', 'success');
+            showNotification('Data saved locally. Click "Save to GitHub" to update repository.', 'success');
         }
         
-        // Update total deposit amount in Total rows (sum of ALL modes)
+        // Update total deposit amount in Total rows
         function updateTotalDepositAmount() {
-            // Recalculate total deposit amount for ALL modes
             let totalDepositAmount = 0;
             const depositAmountCells = document.querySelectorAll('.editable-cell[data-type="depositAmount"]');
             
@@ -1526,10 +1678,9 @@
                 }
             });
             
-            // Update all Total row deposit amount cells
             const totalRows = document.querySelectorAll('.highlight-total');
             totalRows.forEach(row => {
-                const depositAmountCell = row.querySelector('td:nth-child(8)'); // 8th column is deposit amount
+                const depositAmountCell = row.querySelector('td:nth-child(8)');
                 if (depositAmountCell) {
                     depositAmountCell.textContent = totalDepositAmount > 0 ? Math.round(totalDepositAmount).toString() : '-';
                 }
@@ -1546,6 +1697,40 @@
         // Close password modal
         function closePasswordModal() {
             document.getElementById('passwordModal').style.display = 'none';
+        }
+        
+        // Open GitHub config modal
+        function openGitHubConfigModal() {
+            document.getElementById('githubConfigModal').style.display = 'flex';
+            document.getElementById('githubTokenInput').value = GITHUB_CONFIG.TOKEN || '';
+            document.getElementById('githubUserInput').value = GITHUB_CONFIG.USER;
+            document.getElementById('githubRepoInput').value = GITHUB_CONFIG.REPO;
+            document.getElementById('githubBranchInput').value = GITHUB_CONFIG.BRANCH;
+            document.getElementById('githubFileName').value = GITHUB_CONFIG.FILE_NAME;
+            document.getElementById('githubTokenInput').focus();
+        }
+        
+        // Close GitHub config modal
+        function closeGitHubConfigModal() {
+            document.getElementById('githubConfigModal').style.display = 'none';
+        }
+        
+        // Save GitHub configuration
+        function saveGitHubConfigFromModal() {
+            GITHUB_CONFIG.USER = document.getElementById('githubUserInput').value.trim();
+            GITHUB_CONFIG.REPO = document.getElementById('githubRepoInput').value.trim();
+            GITHUB_CONFIG.BRANCH = document.getElementById('githubBranchInput').value.trim();
+            GITHUB_CONFIG.FILE_NAME = document.getElementById('githubFileName').value.trim();
+            GITHUB_CONFIG.TOKEN = document.getElementById('githubTokenInput').value.trim();
+            
+            if (!GITHUB_CONFIG.TOKEN) {
+                showNotification('Please enter a GitHub Personal Access Token', 'warning');
+                return;
+            }
+            
+            saveGitHubConfig();
+            closeGitHubConfigModal();
+            showNotification('GitHub configuration saved successfully!', 'success');
         }
         
         // Validate password and enable edit mode
@@ -1570,9 +1755,7 @@
             try {
                 showNotification(`Loading data for ${formattedDate}...`, 'info');
                 
-                // Add timestamp to prevent caching issues
                 const urlWithTimestamp = `${csvUrl}?t=${Date.now()}`;
-                
                 const response = await fetch(urlWithTimestamp);
                 
                 if (!response.ok) {
@@ -1588,22 +1771,17 @@
                     throw new Error(`Data file CC_${formattedDate}.csv is empty or not found`);
                 }
                 
-                // Parse CSV data
                 const csvData = parseCSV(csvText);
                 
                 if (csvData.length === 0) {
                     throw new Error('No valid data found in CSV file');
                 }
                 
-                // Process data
                 const processedData = processCSVData(csvData, formattedDate);
-                
-                // Generate table rows
                 generateTableRows(processedData, date);
                 
                 showNotification(`Data loaded successfully for ${formattedDate}!`, 'success');
                 
-                // Update current date display
                 const displayDate = formatDateForDisplay(date);
                 document.getElementById('currentDate').textContent = displayDate;
                 document.getElementById('currentDateDisplay').textContent = `Data for: ${displayDate}`;
@@ -1614,7 +1792,6 @@
                 console.error('Error fetching CSV data:', error);
                 showNotification(`Error: ${error.message}`, 'warning');
                 
-                // Show error in table
                 const tableBody = document.getElementById('tableBody');
                 tableBody.innerHTML = `
                     <tr>
@@ -1644,34 +1821,37 @@
             
             const date = new Date(selectedDate);
             
-            // Show loading state
             const loadBtn = document.getElementById('loadDataBtn');
             const originalText = loadBtn.innerHTML;
             loadBtn.innerHTML = '<div class="loading" style="width: 16px; height: 16px; border-width: 2px;"></div> Loading...';
             loadBtn.disabled = true;
             
-            // Fetch and process data
             await fetchCSVData(date);
             
-            // Reset button
             loadBtn.innerHTML = originalText;
             loadBtn.disabled = false;
         });
         
-        // Export data button functionality
-        document.getElementById('exportDataBtn').addEventListener('click', function() {
-            saveBankDepositData();
+        // Save to GitHub button functionality
+        document.getElementById('saveToGitHubBtn').addEventListener('click', async function() {
+            const saveBtn = document.getElementById('saveToGitHubBtn');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<div class="loading" style="width: 16px; height: 16px; border-width: 2px;"></div> Saving...';
+            saveBtn.disabled = true;
+            
+            await saveToGitHub();
+            
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
         });
         
-        // Date filter change - auto load data
+        // Date filter change
         document.getElementById('dateFilter').addEventListener('change', function() {
             const selectedDate = this.value;
             if (selectedDate) {
                 const date = new Date(selectedDate);
                 const formattedDate = formatDateForDisplay(date);
                 showNotification(`Date selected: ${formattedDate} - Click Load Data to fetch`, 'info');
-                
-                // Enable load data button
                 document.getElementById('loadDataBtn').disabled = false;
             }
         });
@@ -1680,6 +1860,12 @@
         document.getElementById('closePasswordModalBtn').addEventListener('click', closePasswordModal);
         document.getElementById('cancelPasswordBtn').addEventListener('click', closePasswordModal);
         document.getElementById('submitPasswordBtn').addEventListener('click', validatePasswordAndEnableEditMode);
+        
+        // GitHub config modal event listeners
+        document.getElementById('githubConfigBtn').addEventListener('click', openGitHubConfigModal);
+        document.getElementById('closeGitHubModalBtn').addEventListener('click', closeGitHubConfigModal);
+        document.getElementById('cancelGitHubBtn').addEventListener('click', closeGitHubConfigModal);
+        document.getElementById('saveGitHubConfigBtn').addEventListener('click', saveGitHubConfigFromModal);
         
         // Enter key in password input
         document.getElementById('passwordInput').addEventListener('keypress', function(e) {
@@ -1692,15 +1878,20 @@
         document.getElementById('lockEditBtn').addEventListener('click', openPasswordModal);
         document.getElementById('unlockEditBtn').addEventListener('click', disableEditMode);
         
-        // Close modal when clicking outside
+        // Close modals when clicking outside
         window.addEventListener('click', function(event) {
-            const modal = document.getElementById('passwordModal');
-            if (event.target === modal) {
+            const passwordModal = document.getElementById('passwordModal');
+            const githubModal = document.getElementById('githubConfigModal');
+            
+            if (event.target === passwordModal) {
                 closePasswordModal();
+            }
+            if (event.target === githubModal) {
+                closeGitHubConfigModal();
             }
         });
         
-        // Action buttons functionality - नवीन टॅबमध्ये रिडायरेक्ट करणे
+        // Action buttons functionality
         document.getElementById('chequeDataBtn').addEventListener('click', function() {
             window.open('cheque_data.html', '_blank');
             showNotification('Opening Cheque Data in new tab', 'info');
@@ -1723,15 +1914,12 @@
         
         // Function to show notifications
         function showNotification(message, type) {
-            // Remove existing notification
             const existingNotification = document.querySelector('.notification');
             if (existingNotification) existingNotification.remove();
             
-            // Create notification element
             const notification = document.createElement('div');
             notification.className = `notification notification-${type}`;
             
-            // Set background color based on type
             if (type === 'success') {
                 notification.style.backgroundColor = '#27ae60';
                 notification.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
@@ -1745,7 +1933,6 @@
             
             document.body.appendChild(notification);
             
-            // Remove notification after 3 seconds
             setTimeout(() => {
                 notification.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => notification.remove(), 300);
@@ -1754,7 +1941,10 @@
         
         // Initialize the page
         window.onload = async function() {
-            // Set today's date as default in the date filter
+            // Load GitHub configuration
+            loadGitHubConfig();
+            
+            // Set today's date as default
             const today = new Date();
             const todayFormatted = today.toISOString().split('T')[0];
             document.getElementById('dateFilter').value = todayFormatted;
@@ -1772,11 +1962,11 @@
                 border: 1px solid rgba(255, 255, 255, 0.25);
             `;
             
-            // Load existing bank deposit data from Excel file
-            console.log('Loading bank deposit data from Excel file...');
+            // Load existing bank deposit data
+            console.log('Loading bank deposit data from GitHub...');
             await loadBankDepositData();
             
-            // Check for localStorage backup and merge with loaded data
+            // Load backup data from localStorage
             try {
                 const backup = localStorage.getItem('bankDepositDataBackup');
                 if (backup) {
@@ -1784,31 +1974,40 @@
                     console.log(`Found ${backupData.length} backup records in localStorage`);
                     
                     // Merge backup data with loaded data
-                    backupData.forEach(entry => {
-                        const exists = bankDepositData.some(e => 
-                            e.collectionDate === entry.collectionDate &&
-                            e.centerCode === entry.centerCode &&
-                            e.mode === entry.mode
+                    backupData.forEach(backupEntry => {
+                        const existingIndex = bankDepositData.findIndex(entry => 
+                            entry.collectionDate === backupEntry.collectionDate &&
+                            entry.centerCode === backupEntry.centerCode &&
+                            entry.mode === backupEntry.mode
                         );
-                        if (!exists) {
-                            bankDepositData.push(entry);
+                        
+                        if (existingIndex !== -1) {
+                            bankDepositData[existingIndex] = backupEntry;
+                        } else {
+                            bankDepositData.push(backupEntry);
                         }
                     });
-                    console.log(`Total bank deposit records after merge: ${bankDepositData.length}`);
+                    
+                    console.log(`Total bank deposit records: ${bankDepositData.length}`);
                 }
             } catch (e) {
                 console.log('No valid backup data found in localStorage');
             }
             
-            // Debug: Log sample data to confirm remarks are loaded
-            console.log('Sample bank deposit data with remarks:');
-            bankDepositData.filter(entry => entry.remark).slice(0, 5).forEach(entry => {
-                console.log(`- ${entry.collectionDate}, ${entry.centerCode}, ${entry.mode}: "${entry.remark}"`);
-            });
-            
             // Initialize edit mode as disabled
             disableEditMode();
+            
+            // Set up auto-save timer
+            autoSaveTimer = setInterval(autoSaveData, 30000);
+            window.addEventListener('beforeunload', autoSaveData);
         };
+        
+        // Clean up timer when page is unloaded
+        window.addEventListener('unload', function() {
+            if (autoSaveTimer) {
+                clearInterval(autoSaveTimer);
+            }
+        });
     </script>
 </body>
 </html>
