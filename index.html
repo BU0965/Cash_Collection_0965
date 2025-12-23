@@ -197,7 +197,7 @@
             overflow: hidden;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             margin-bottom: 30px;
-            overflow-x: hidden;
+            overflow-x: auto;
             border: 1px solid #eef2f7;
             position: relative;
         }
@@ -206,24 +206,18 @@
             width: 100%;
             border-collapse: collapse;
             border-spacing: 0;
-            table-layout: auto;
+            min-width: 1200px;
         }
         
-        /* सर्व बॉर्डर्स काळ्या रंगाचे करणे */
         .main-header th {
             background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
             color: white;
             padding: 18px 12px;
             text-align: center;
             font-weight: 600;
-            border-right: 1px solid #000000;
-            border-bottom: 1px solid #000000;
+            border: 1px solid #000000;
             position: relative;
             font-size: 15px;
-        }
-        
-        .main-header th:last-child {
-            border-right: 1px solid #000000;
         }
         
         .sub-header th {
@@ -232,27 +226,17 @@
             font-size: 14px;
             font-weight: 500;
             padding: 14px 8px;
-            border-right: 1px solid #000000;
-            border-bottom: 1px solid #000000;
+            border: 1px solid #000000;
             position: relative;
-        }
-        
-        .sub-header th:last-child {
-            border-right: 1px solid #000000;
         }
         
         td {
             padding: 10px 8px;
             text-align: center;
-            border-bottom: 1px solid #000000;
-            border-right: 1px solid #000000;
+            border: 1px solid #000000;
             background-color: white;
             transition: background-color 0.2s;
             position: relative;
-        }
-        
-        td:last-child {
-            border-right: 1px solid #000000;
         }
         
         tr:not(.highlight-total):hover td {
@@ -267,8 +251,6 @@
             font-size: 15px;
             padding-left: 20px;
             border-left: 4px solid #1a73e8;
-            border-right: 1px solid #000000;
-            border-bottom: 1px solid #000000;
         }
         
         .mode-row {
@@ -281,7 +263,6 @@
             font-weight: 600;
             color: #2d3748;
             position: relative;
-            border-right: 1px solid #000000;
         }
         
         .mode-label::before {
@@ -300,29 +281,24 @@
             background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%) !important;
             color: white;
             font-weight: 700;
-            border-top: 2px solid #000000;
-            border-bottom: 2px solid #000000;
         }
         
         .highlight-total td {
             background: transparent !important;
             color: white;
-            border-bottom: 1px solid #000000;
-            border-right: 1px solid #000000;
         }
         
         .highlight-total .mode-label::before {
             background-color: white;
         }
         
-        /* रिमार्क कॉलमसाठी नवीन CSS - Wrap Text साठी */
         .remark-cell {
-            width: 300px; /* निश्चित रुंदी */
+            width: 300px;
             min-width: 250px;
             max-width: 350px;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            white-space: normal !important; /* Wrap text साठी */
+            white-space: normal !important;
             overflow: hidden;
             text-overflow: ellipsis;
             color: #4a5568;
@@ -331,7 +307,6 @@
             padding: 10px 15px;
             text-align: left;
             vertical-align: top;
-            border-right: 1px solid #000000;
             line-height: 1.5;
         }
         
@@ -340,7 +315,6 @@
             color: #2c3e50;
             font-family: 'Courier New', monospace;
             letter-spacing: 0.5px;
-            border-right: 1px solid #000000;
         }
         
         .footer {
@@ -370,7 +344,6 @@
             font-size: 13px;
             color: #4a5568;
             font-weight: 500;
-            border-right: 1px solid #000000;
         }
         
         .table-shadow {
@@ -436,7 +409,6 @@
             }
         }
 
-        /* Notification styles */
         .notification {
             position: fixed;
             top: 25px;
@@ -495,7 +467,6 @@
         .editable-cell {
             position: relative;
             cursor: pointer;
-            border-right: 1px solid #000000;
         }
 
         .edit-icon {
@@ -617,8 +588,7 @@
             width: 300px;
             min-width: 250px;
             max-width: 350px;
-            border-right: 1px solid #000000;
-            white-space: normal !important; /* Wrap text साठी */
+            white-space: normal !important;
             word-wrap: break-word;
             overflow-wrap: break-word;
             line-height: 1.5;
@@ -638,7 +608,7 @@
             font-size: 14px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             resize: vertical;
-            white-space: pre-wrap; /* Wrap text साठी */
+            white-space: pre-wrap;
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
@@ -649,28 +619,18 @@
             box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
         }
         
-        .data-table-container {
-            overflow-x: hidden;
-        }
-
-        #collectionTable th:last-child,
-        #collectionTable td:last-child {
-            padding-right: 0;
-            border-right: 1px solid #000000;
-        }
-        
-        /* टेबल बाहेरील बॉर्डर */
-        #collectionTable {
-            border: 1px solid #000000;
-        }
-        
-        #collectionTable thead tr:first-child th {
-            border-top: 1px solid #000000;
-        }
-        
-        #collectionTable tbody tr:last-child td {
-            border-bottom: 1px solid #000000;
-        }
+        /* Column widths for better layout */
+        th:nth-child(1), td:nth-child(1) { width: 100px; } /* Date */
+        th:nth-child(2), td:nth-child(2) { width: 70px; } /* Rcpt From */
+        th:nth-child(3), td:nth-child(3) { width: 70px; } /* Rcpt To */
+        th:nth-child(4), td:nth-child(4) { width: 80px; } /* Mode */
+        th:nth-child(5), td:nth-child(5) { width: 70px; } /* Rcpt Count */
+        th:nth-child(6), td:nth-child(6) { width: 90px; } /* Collection Amount */
+        th:nth-child(7), td:nth-child(7) { width: 100px; } /* Deposit Date */
+        th:nth-child(8), td:nth-child(8) { width: 100px; } /* Deposit Amount */
+        th:nth-child(9), td:nth-child(9) { width: 70px; } /* Cancel Rcpt */
+        th:nth-child(10), td:nth-child(10) { width: 90px; } /* Cancel Amount */
+        th:nth-child(11), td:nth-child(11) { width: 300px; min-width: 250px; max-width: 350px; } /* Remark */
     </style>
 </head>
 <body>
@@ -734,16 +694,16 @@
             <table id="collectionTable">
                 <thead>
                     <tr class="main-header">
-                        <th rowspan="2" style="border-top: 1px solid #000000; border-left: 1px solid #000000;">Date</th>
-                        <th colspan="2" style="border-top: 1px solid #000000;">Rcpt No</th>
-                        <th rowspan="2" style="border-top: 1px solid #000000;">Mode</th>
-                        <th colspan="2" style="border-top: 1px solid #000000;">Collection</th>
-                        <th colspan="2" style="border-top: 1px solid #000000;">Deposited In Bank</th>
-                        <th colspan="2" style="border-top: 1px solid #000000;">Cancel Rcpt</th>
-                        <th rowspan="2" style="border-top: 1px solid #000000; border-right: 1px solid #000000; width: 300px; min-width: 250px;">Remark</th>
+                        <th rowspan="2">Date</th>
+                        <th colspan="2">Rcpt No</th>
+                        <th rowspan="2">Mode</th>
+                        <th colspan="2">Collection</th>
+                        <th colspan="2">Deposited In Bank</th>
+                        <th colspan="2">Cancel Rcpt</th>
+                        <th rowspan="2">Remark</th>
                     </tr>
                     <tr class="sub-header">
-                        <th style="border-left: 1px solid #000000;">From</th>
+                        <th>From</th>
                         <th>To</th>
                         <th>Rcpt</th>
                         <th>Amount</th>
@@ -755,7 +715,7 @@
                 </thead>
                 <tbody id="tableBody">
                     <tr id="loadingRow">
-                        <td colspan="11" style="border: 1px solid #000000;">
+                        <td colspan="11">
                             <div class="loading-container">
                                 <div class="loading"></div>
                                 <div class="loading-text">Please select a date and click "Load Data"</div>
@@ -1342,7 +1302,7 @@
             if (centers.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="11" style="text-align: center; padding: 40px; color: #718096; border: 1px solid #000000;">
+                        <td colspan="11" style="text-align: center; padding: 40px; color: #718096;">
                             <i class="fas fa-database" style="font-size: 48px; margin-bottom: 15px; display: block; opacity: 0.5;"></i>
                             No data found for the selected date
                         </td>
@@ -1356,10 +1316,27 @@
             const collectionDateStr = formatDateForFileName(selectedDate);
             
             centers.forEach(center => {
+                // Calculate total deposit amount for this center
+                let centerTotalDepositAmount = 0;
+                const centerDepositEntries = [];
+                
+                // First pass: collect all deposit amounts for this center
+                MODES.forEach(mode => {
+                    if (mode !== 'Total') {
+                        const bankDeposit = getBankDeposit(collectionDateStr, center.name, mode);
+                        if (bankDeposit && bankDeposit.depositAmount) {
+                            centerDepositEntries.push({
+                                mode: mode,
+                                amount: parseFloat(bankDeposit.depositAmount) || 0
+                            });
+                        }
+                    }
+                });
+                
                 // Add collection center header row
                 const centerRow = document.createElement('tr');
                 centerRow.innerHTML = `
-                    <td class="collection-center" colspan="11" style="border-left: 1px solid #000000; border-right: 1px solid #000000;">${center.name}</td>
+                    <td class="collection-center" colspan="11">${center.name}</td>
                 `;
                 tableBody.appendChild(centerRow);
                 
@@ -1400,8 +1377,43 @@
                     }
                     
                     // Handle Deposited In Bank cells
-                    const depositDateValue = modeData.depositDate || '';
-                    const depositAmountValue = modeData.depositAmount || '';
+                    let depositDateValue = modeData.depositDate || '';
+                    let depositAmountValue = modeData.depositAmount || '';
+                    
+                    // For Total row, calculate sum of all modes
+                    if (mode === 'Total') {
+                        // Calculate total deposit amount for this center
+                        centerTotalDepositAmount = 0;
+                        MODES.forEach(m => {
+                            if (m !== 'Total') {
+                                const deposit = getBankDeposit(collectionDateStr, center.name, m);
+                                if (deposit && deposit.depositAmount) {
+                                    centerTotalDepositAmount += parseFloat(deposit.depositAmount) || 0;
+                                }
+                            }
+                        });
+                        
+                        // For Total row, show the latest deposit date if available
+                        const allDeposits = bankDepositData.filter(d => 
+                            d.collectionDate === collectionDateStr && 
+                            d.centerCode === center.name
+                        );
+                        
+                        if (allDeposits.length > 0) {
+                            // Find the latest deposit date
+                            const dates = allDeposits
+                                .filter(d => d.depositDate)
+                                .map(d => new Date(d.depositDate))
+                                .filter(d => !isNaN(d.getTime()));
+                            
+                            if (dates.length > 0) {
+                                const latestDate = new Date(Math.max(...dates));
+                                depositDateValue = latestDate.toISOString().split('T')[0];
+                            }
+                        }
+                        
+                        depositAmountValue = centerTotalDepositAmount > 0 ? centerTotalDepositAmount : '';
+                    }
                     
                     const depositDateCell = `
                         <td class="editable-cell date-cell" 
@@ -1409,8 +1421,7 @@
                             data-center="${center.name}"
                             data-mode="${mode}"
                             data-type="depositDate"
-                            data-value="${depositDateValue}"
-                            style="border-left: 1px solid #000000;">
+                            data-value="${depositDateValue}">
                             ${depositDateValue ? formatDateForDisplay(new Date(depositDateValue)) : '-'}
                             <span class="edit-icon"><i class="fas fa-edit"></i></span>
                         </td>
@@ -1447,7 +1458,7 @@
                     
                     // Generate row
                     modeRow.innerHTML = `
-                        <td class="date-cell" style="border-left: 1px solid #000000;">${formattedDate}</td>
+                        <td class="date-cell">${formattedDate}</td>
                         <td>${receiptFrom}</td>
                         <td>${receiptTo}</td>
                         <td class="mode-label">${mode}</td>
@@ -1462,9 +1473,6 @@
                     tableBody.appendChild(modeRow);
                 });
             });
-            
-            // Calculate and update Total row deposit amount
-            updateTotalDepositAmount();
             
             // Update edit mode
             updateEditMode();
@@ -1655,8 +1663,8 @@
             
             saveBankDepositEntry(collectionDate, center, mode, depositDate, depositAmount, remark);
             
-            // Recalculate and update Total row deposit amount
-            updateTotalDepositAmount();
+            // Recalculate and update Total row for this center
+            updateTotalRowForCenter(collectionDate, center);
             
             // Re-add click handler for edit mode
             if (isEditModeActive) {
@@ -1666,25 +1674,57 @@
             showNotification('Data saved locally. Click "Save to GitHub" to update repository.', 'success');
         }
         
-        // Update total deposit amount in Total rows
-        function updateTotalDepositAmount() {
+        // Update Total row for a specific center
+        function updateTotalRowForCenter(collectionDate, center) {
+            // Find the center's Total row
+            const totalRow = document.querySelector(`.highlight-total td[data-collection-date="${collectionDate}"][data-center="${center}"]`);
+            if (!totalRow) return;
+            
+            // Calculate total deposit amount for this center
             let totalDepositAmount = 0;
-            const depositAmountCells = document.querySelectorAll('.editable-cell[data-type="depositAmount"]');
-            
-            depositAmountCells.forEach(cell => {
-                const value = cell.dataset.value;
-                if (value && value !== '-') {
-                    totalDepositAmount += parseFloat(value);
+            MODES.forEach(m => {
+                if (m !== 'Total') {
+                    const deposit = getBankDeposit(collectionDate, center, m);
+                    if (deposit && deposit.depositAmount) {
+                        totalDepositAmount += parseFloat(deposit.depositAmount) || 0;
+                    }
                 }
             });
             
-            const totalRows = document.querySelectorAll('.highlight-total');
-            totalRows.forEach(row => {
-                const depositAmountCell = row.querySelector('td:nth-child(8)');
-                if (depositAmountCell) {
-                    depositAmountCell.textContent = totalDepositAmount > 0 ? Math.round(totalDepositAmount).toString() : '-';
+            // Find the deposit amount cell in the Total row
+            const totalAmountCell = document.querySelector(`.highlight-total .editable-cell[data-collection-date="${collectionDate}"][data-center="${center}"][data-mode="Total"][data-type="depositAmount"]`);
+            if (totalAmountCell) {
+                totalAmountCell.dataset.value = totalDepositAmount > 0 ? totalDepositAmount.toString() : '';
+                totalAmountCell.innerHTML = totalDepositAmount > 0 ? Math.round(totalDepositAmount).toString() + 
+                    '<span class="edit-icon"><i class="fas fa-edit"></i></span>' : 
+                    '-<span class="edit-icon"><i class="fas fa-edit"></i></span>';
+            }
+            
+            // Update the deposit date in Total row (show latest date)
+            const allDeposits = bankDepositData.filter(d => 
+                d.collectionDate === collectionDate && 
+                d.centerCode === center
+            );
+            
+            let latestDate = '';
+            if (allDeposits.length > 0) {
+                const dates = allDeposits
+                    .filter(d => d.depositDate)
+                    .map(d => new Date(d.depositDate))
+                    .filter(d => !isNaN(d.getTime()));
+                
+                if (dates.length > 0) {
+                    const latest = new Date(Math.max(...dates));
+                    latestDate = latest.toISOString().split('T')[0];
                 }
-            });
+            }
+            
+            const totalDateCell = document.querySelector(`.highlight-total .editable-cell[data-collection-date="${collectionDate}"][data-center="${center}"][data-mode="Total"][data-type="depositDate"]`);
+            if (totalDateCell) {
+                totalDateCell.dataset.value = latestDate;
+                totalDateCell.innerHTML = (latestDate ? formatDateForDisplay(new Date(latestDate)) : '-') + 
+                    '<span class="edit-icon"><i class="fas fa-edit"></i></span>';
+            }
         }
         
         // Open password modal
@@ -1795,7 +1835,7 @@
                 const tableBody = document.getElementById('tableBody');
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="11" style="text-align: center; padding: 40px; color: #e53e3e; border: 1px solid #000000;">
+                        <td colspan="11" style="text-align: center; padding: 40px; color: #e53e3e;">
                             <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
                             <strong>Error loading data</strong><br>
                             ${error.message}<br>
