@@ -1101,39 +1101,55 @@
             return '';
         }
         
-        // Save bank deposit entry
+        // Save bank deposit entry - CRITICAL FIX: Save deposit date/amount and remark independently
         function saveBankDepositEntry(collectionDate, centerCode, mode, depositDate, depositAmount, remark) {
-            // Remove existing entry if exists
-            bankDepositData = bankDepositData.filter(entry => 
-                !(entry.collectionDate === collectionDate &&
-                  entry.centerCode === centerCode &&
-                  entry.mode === mode)
+            // Find existing entry for this specific mode
+            const existingEntryIndex = bankDepositData.findIndex(entry => 
+                entry.collectionDate === collectionDate &&
+                entry.centerCode === centerCode &&
+                entry.mode === mode
             );
             
-            // Add new entry
-            const newEntry = {
-                collectionDate: collectionDate,
-                centerCode: centerCode,
-                mode: mode,
-                depositDate: depositDate || '',
-                depositAmount: depositAmount ? parseFloat(depositAmount) : 0,
-                remark: remark || '',
-                entryDate: new Date().toISOString().split('T')[0]
-            };
+            let entryToSave;
             
-            bankDepositData.push(newEntry);
+            if (existingEntryIndex !== -1) {
+                // Update existing entry
+                entryToSave = bankDepositData[existingEntryIndex];
+                entryToSave.depositDate = depositDate || entryToSave.depositDate || '';
+                entryToSave.depositAmount = depositAmount ? parseFloat(depositAmount) : (entryToSave.depositAmount || 0);
+                entryToSave.remark = remark || entryToSave.remark || '';
+                entryToSave.entryDate = new Date().toISOString().split('T')[0];
+            } else {
+                // Create new entry
+                entryToSave = {
+                    collectionDate: collectionDate,
+                    centerCode: centerCode,
+                    mode: mode,
+                    depositDate: depositDate || '',
+                    depositAmount: depositAmount ? parseFloat(depositAmount) : 0,
+                    remark: remark || '',
+                    entryDate: new Date().toISOString().split('T')[0]
+                };
+                bankDepositData.push(entryToSave);
+            }
             
-            // If remark is entered, save it for ALL modes
-            if (remark && remark.trim() !== '') {
-                // Save the same remark for all other modes
-                const otherModes = MODES.filter(m => m !== mode);
+            // FIX: If remark is entered for Cash mode, also save it for other modes
+            if (remark && remark.trim() !== '' && mode === 'Cash') {
+                const otherModes = MODES.filter(m => m !== 'Cash' && m !== 'Total');
                 otherModes.forEach(otherMode => {
-                    // Check if entry exists for this mode
-                    let otherEntry = getBankDeposit(collectionDate, centerCode, otherMode);
+                    // Find or create entry for other mode
+                    const otherEntryIndex = bankDepositData.findIndex(entry => 
+                        entry.collectionDate === collectionDate &&
+                        entry.centerCode === centerCode &&
+                        entry.mode === otherMode
+                    );
                     
-                    if (!otherEntry) {
-                        // Create new entry with same remark
-                        otherEntry = {
+                    if (otherEntryIndex !== -1) {
+                        // Update existing entry with remark, but preserve deposit date/amount
+                        bankDepositData[otherEntryIndex].remark = remark;
+                    } else {
+                        // Create new entry with just the remark
+                        bankDepositData.push({
                             collectionDate: collectionDate,
                             centerCode: centerCode,
                             mode: otherMode,
@@ -1141,11 +1157,7 @@
                             depositAmount: 0,
                             remark: remark,
                             entryDate: new Date().toISOString().split('T')[0]
-                        };
-                        bankDepositData.push(otherEntry);
-                    } else if (!otherEntry.remark || otherEntry.remark.trim() === '') {
-                        // Update existing entry with same remark
-                        otherEntry.remark = remark;
+                        });
                     }
                 });
             }
@@ -1155,7 +1167,7 @@
             
             console.log(`Saved entry: ${collectionDate}, ${centerCode}, ${mode}, Deposit: ${depositDate}/${depositAmount}, Remark: "${remark}"`);
             
-            return newEntry;
+            return entryToSave;
         }
         
         // Process CSV data for table display
@@ -1620,7 +1632,7 @@
             }
         }
         
-        // Save cell value
+        // Save cell value - FIXED: Properly save deposit date/amount and remark
         function saveCellValue(cell, input, type, collectionDate, center, mode) {
             let newValue = input.value.trim();
             
@@ -1652,15 +1664,33 @@
                 cell.dataset.value = newValue;
             }
             
-            // Save to bank deposit data
+            // FIX: Get ALL current values for this center and mode
             const depositDateCell = document.querySelector(`.editable-cell[data-collection-date="${collectionDate}"][data-center="${center}"][data-mode="${mode}"][data-type="depositDate"]`);
             const depositAmountCell = document.querySelector(`.editable-cell[data-collection-date="${collectionDate}"][data-center="${center}"][data-mode="${mode}"][data-type="depositAmount"]`);
-            const remarkCell = document.querySelector(`.remark-editable-cell[data-collection-date="${collectionDate}"][data-center="${center}"]`);
             
-            const depositDate = depositDateCell ? depositDateCell.dataset.value || '' : '';
-            const depositAmount = depositAmountCell ? depositAmountCell.dataset.value || '' : '';
-            const remark = remarkCell ? remarkCell.dataset.value || '' : '';
+            let depositDate = '';
+            let depositAmount = '';
             
+            if (depositDateCell) {
+                depositDate = depositDateCell.dataset.value || '';
+            }
+            
+            if (depositAmountCell) {
+                depositAmount = depositAmountCell.dataset.value || '';
+            }
+            
+            // For remark, get it from the Cash mode cell
+            let remark = '';
+            if (type === 'remark') {
+                remark = newValue;
+            } else {
+                const remarkCell = document.querySelector(`.remark-editable-cell[data-collection-date="${collectionDate}"][data-center="${center}"]`);
+                if (remarkCell) {
+                    remark = remarkCell.dataset.value || '';
+                }
+            }
+            
+            // Save to bank deposit data - this will preserve both deposit info and remark
             saveBankDepositEntry(collectionDate, center, mode, depositDate, depositAmount, remark);
             
             // Recalculate and update Total row for this center
